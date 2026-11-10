@@ -1,9 +1,11 @@
 "use client";
 
 import { useLayoutEffect, useRef, type ReactNode, type RefObject } from "react";
-import { clipFor, type SceneId } from "@/lib/clips";
+import { clipFor, CLIPS, type SceneId } from "@/lib/clips";
 import { cx } from "@/lib/cx";
 import { getEngine } from "./scene-engine";
+
+const FALLBACK_POSTER = CLIPS.A?.poster ?? "";
 
 type Props = {
   scene: SceneId;
@@ -42,6 +44,7 @@ export function ScrubSection({
 
   const clip = clipFor(scene);
   const hasMedia = Boolean(clip?.hd);
+  const showFallback = !hasMedia && Boolean(FALLBACK_POSTER);
 
   useLayoutEffect(() => {
     const section = sectionRef.current;
@@ -79,11 +82,22 @@ export function ScrubSection({
       <div className={cx("scene", !hasMedia && "no-media")}>
         {clip?.poster ? (
           // The poster is the video's own first frame on a third-party CDN. A
-          // plain <img> keeps it off the optimizer proxy and paints immediately.
+          // plain  keeps it off the optimizer proxy and paints immediately.
           // eslint-disable-next-line @next/next/no-img-element
           <img
             className="poster"
             src={clip.poster}
+            alt=""
+            decoding="async"
+            fetchPriority="high"
+          />
+        ) : showFallback ? (
+          // No clip on this scene: show the poster as a fallback on mobile so
+          // the scene is never a blank black screen between sections.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            className="poster"
+            src={FALLBACK_POSTER}
             alt=""
             decoding="async"
             fetchPriority="high"
